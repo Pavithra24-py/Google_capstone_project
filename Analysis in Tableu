@@ -1,0 +1,182 @@
+# Installed Tidyverse & loaded tidyverse, lubridate, HMS and data.table libraries for my project, I did in Console
+
+library(tidyverse)
+library(lubridate)
+library(hms)
+library(data.table)
+
+# Uploaded Original Data Files between August 2020 to July 2021
+aug08_df <- read_csv("~/Library/Mobile Documents/com~apple~CloudDocs/Cyclistic_Project/202008-divvy-tripdata.csv")
+sep09_df <- read_csv("~/Library/Mobile Documents/com~apple~CloudDocs/Cyclistic_Project/202009-divvy-tripdata.csv")
+oct10_df <- read_csv("~/Library/Mobile Documents/com~apple~CloudDocs/Cyclistic_Project/202010-divvy-tripdata.csv")
+nov11_df <- read_csv("~/Library/Mobile Documents/com~apple~CloudDocs/Cyclistic_Project/202011-divvy-tripdata.csv")
+dec12_df <- read_csv("~/Library/Mobile Documents/com~apple~CloudDocs/Cyclistic_Project/202012-divvy-tripdata.csv")
+jan01_df <- read_csv("~/Library/Mobile Documents/com~apple~CloudDocs/Cyclistic_Project/202101-divvy-tripdata.csv")
+feb02_df <- read_csv("~/Library/Mobile Documents/com~apple~CloudDocs/Cyclistic_Project/202102-divvy-tripdata.csv")
+mar03_df <- read_csv("~/Library/Mobile Documents/com~apple~CloudDocs/Cyclistic_Project/202103-divvy-tripdata.csv")
+apr04_df <- read_csv("~/Library/Mobile Documents/com~apple~CloudDocs/Cyclistic_Project/202104-divvy-tripdata.csv")
+may05_df <- read_csv("~/Library/Mobile Documents/com~apple~CloudDocs/Cyclistic_Project/202105-divvy-tripdata.csv")
+jun06_df <- read_csv("~/Library/Mobile Documents/com~apple~CloudDocs/Cyclistic_Project/202106-divvy-tripdata.csv")
+jul07_df <- read_csv("~/Library/Mobile Documents/com~apple~CloudDocs/Cyclistic_Project/202107-divvy-tripdata.csv")
+
+# Merge the above file into a single file
+cyclistic_df <- rbind(aug08_df,sep09_df,oct10_df,nov11_df,dec12_df,jan01_df,feb02_df,mar03_df,apr04_df,jun06_df,jul07_df,may05_df)
+
+# Remove individual month data frames to clear up space in the environment
+remove(aug08_df,sep09_df,oct10_df,nov11_df,dec12_df,jan01_df,feb02_df,mar03_df,apr04_df, may05_df,jun06_df,jul07_df)
+
+# Create new data frame - it will contain all of the new columns
+cyclistic_data <- cyclistic_df
+
+# Create new columns for the new data frame "cylistic_data"
+# Create columns for ride length, hour, day, time, time of day, day of week, month, year, season
+
+# Create Ride Length column by subtracting endtime & startime using difftime function, convert them into minutes
+# $ sign help us to step in the cyclistic_data
+# next round up the ride length using round() function
+cyclistic_data$ride_length <- difftime(cyclistic_df$ended_at, cyclistic_df$started_at, units = "mins")
+cyclistic_data$ride_length <- round(cyclistic_data$ride_length, digits = 1)
+
+# Create date column
+# as.date() works like =int() function in excel.
+# default format is yyyy-mm-dd, use start data
+cyclistic_data$date <- as.Date(cyclistic_data$started_at)
+
+# create day of week column
+# wday() works like =weekday() in excel, It only shows the numerical value
+cyclistic_data$day_of_week <- wday(cyclistic_df$started_at)
+# we can format that numerical value into actual day like we do in Excel.
+# Here %d-%m-%y helps us to find the date & Change it as day of the week
+cyclistic_data$day_of_week <- weekdays(as.Date(cyclistic_data$date, "%d-%m-%y"))
+
+
+# Create a column for Month
+# We're Formatting the dates of cyclistic_data as month
+# Here month calculated as 1 to 12
+cyclistic_data$month <- format(as.Date(cyclistic_data$date), "%m")
+
+# Create a column for Day
+# We're formatting the dates of cyclistic_data as day
+# Here day calculate as 1 to 30 or 31
+cyclistic_data$day <- format(as.Date(cyclistic_data$date), "%d")
+
+# Create a column for year
+# We're formatting the dates of Cyclistic_data as year
+# Here we count year as 2020 or 2021 since we use 2020 to 2021 data's for our analysis
+cyclistic_data$year <- format(as.Date(cyclistic_data$date), "")
+
+# Create a column for time
+# At first, we'll format the date of cylistic_Data  in HH:MM:SS and create new column for time.
+# next we'll find the time in cyclistic_df's started_at column using as_hms function and we'll save them in a time column.
+# When I run the below code, it shows me 00:00:00, because in the cyclistic_data's date column don't have time.
+cyclistic_data$time <- format(as.Date(cyclistic_data$date),"%H:%M:%S")
+cyclistic_data$time <- as_hms((cyclistic_df$started_at))
+
+# Create a column for hour
+# use hour function like Excel to return the "hh", we have to load "lubridate" to use "hour" functions
+# call the time in the cyclistic_data, to sort out only "hh".
+cyclistic_data$hour <- hour(cyclistic_data$time)
+
+# Create a column for different seasons : Spring, Summer, Fall, Winter
+# Spring month - 03, 04, 05
+# Summer month - 06, 07 , 08
+# Fall month - 9, 10, 11
+# Winter month - 12, 01, 02
+# Used %>% pipeline for output or input functions, before that we have to load "dplyr" library
+# mutate function for creating "New Variables" or "New Columns"
+cyclistic_data <- cyclistic_data %>% mutate(season = case_when(month == "03" ~ "Spring",
+                                                               month == "04" ~ "Spring",
+                                                               month == "05" ~ "Spring",
+                                                               month == "06" ~ "Summer",
+                                                               month == "07" ~ "Summer",
+                                                               month == "08" ~ "Summer",
+                                                               month == "09" ~ "Fall",
+                                                               month == "10" ~ "Fall",
+                                                               month == "11" ~ "Fall",
+                                                               month == "12" ~ "Winter",
+                                                               month == "01" ~ "Winter",
+                                                               month == "02" ~ "Winter"))
+
+# Create a column for different time of day: Night, Morning, Afternoon, Evening
+# 0 to 5 means Night
+# 6 to 11 means Morning
+# 12 to 17 means Afternoon
+# 18 to 23 meqns Evening
+# Used %>% pipeline for output or input functions
+# Mutate functions for creating "New Varibles" or "New Columns"
+cyclistic_data <- cyclistic_data %>% mutate(time_of_day = case_when(hour == "01" ~ "Night",
+                                                                    hour == "02" ~ "Night",
+                                                                    hour == "03" ~ "Night",
+                                                                    hour == "04" ~ "Night",
+                                                                    hour == "05" ~ "Night",
+                                                                    hour == "06" ~ "Morning",
+                                                                    hour == "07" ~ "Morning",
+                                                                    hour == "08" ~ "Morning",
+                                                                    hour == "09" ~ "Morning",
+                                                                    hour == "10" ~ "Morning",
+                                                                    hour == "11" ~ "Morning",
+                                                                    hour == "12" ~ "Afternoon",
+                                                                    hour == "13" ~ "Afternoon",
+                                                                    hour == "14" ~ "Afternoon",
+                                                                    hour == "15" ~ "Afternoon",
+                                                                    hour == "16" ~ "Afternoon",
+                                                                    hour == "17" ~ "Afternoon",
+                                                                    hour == "18" ~ "Evening",
+                                                                    hour == "19" ~ "Evening",
+                                                                    hour == "20" ~ "Evening",
+                                                                    hour == "21" ~ "Evening",
+                                                                    hour == "22" ~ "Evening",
+                                                                    hour == "23" ~ "Evening"))
+#create a column for the month using the full month name
+cyclistic_data <-cyclistic_data %>% mutate(month = 
+                                             case_when(month == "01" ~ "January",
+                                                       month == "02" ~ "February",
+                                                       month == "03" ~ "March",
+                                                       month == "04" ~ "April",
+                                                       month == "05" ~ "May",
+                                                       month == "06" ~ "June",
+                                                       month == "07" ~ "July",
+                                                       month == "08" ~ "August",
+                                                       month == "09" ~ "September",
+                                                       month == "10" ~ "October",
+                                                       month == "11" ~ "November",
+                                                       month == "12" ~ "December"
+                                             )
+)
+
+
+# Clean the Data
+
+# Remove Rows with NA Values using na.omit() function
+cyclistic_data <- na.omit(cyclistic_data)
+
+# Remove duplicate rows using "distinct" function. 
+# If it's shows error, check dplyr
+cyclistic_data <- distinct(cyclistic_data)
+
+# Remove where ride length is "0" or negtive values
+# ! function helps us to remove the the values as per the requiremnets and also we used [] bracket index the data frame.
+cyclistic_data <- cyclistic_data[!(cyclistic_data$ride_length <=0), ]
+
+# Remove columns that we don't use
+# Remove ride_id, start_station_id, end_station_id using piples %>% & Select function
+# c() indicates combine or concatenate, so -c do the opposite
+cyclistic_data <- cyclistic_data %>%
+  select(-c(ride_id, start_station_id, end_station_id))
+
+# View the final data
+View(cyclistic_data)
+
+# Create a new data frame to use in Tableu
+cyclistic_tableau <- cyclistic_data
+
+# Clean the data
+cyclistic_tableau <- cyclistic_tableau %>%
+  select(-c(started_at, ended_at))
+
+View(cyclistic_tableau)
+
+# Download the tableu data file as .csv file format
+write.csv(cyclistic_tableau, "~/Library/Mobile Documents/com~apple~CloudDocs/Cyclistic_Project/cyclistic_2024.csv", row.names=FALSE)
+
+
